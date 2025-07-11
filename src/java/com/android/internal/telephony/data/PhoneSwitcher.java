@@ -1272,7 +1272,7 @@ public class PhoneSwitcher extends Handler {
 
     private void switchPhone(int phoneId, boolean active) {
         PhoneState state = mPhoneStates[phoneId];
-        if (state.active == active) return;
+        if (mHalCommandToUse != HAL_COMMAND_ALLOW_DATA && state.active == active) return;
         state.active = active;
         logl((active ? "activate " : "deactivate ") + phoneId);
         state.lastRequested = System.currentTimeMillis();
@@ -1921,6 +1921,11 @@ public class PhoneSwitcher extends Handler {
                     /* If there is a attach failure due to sim not ready then
                     hold the retry until sim gets ready */
                     logl("onDdsSwitchResponse: Wait for SIM to get READY");
+                    return;
+                } else if (error == CommandException.Error.RADIO_NOT_AVAILABLE) {
+                    logl("onDdsSwitchResponse: Falling back to HAL_COMMAND_ALLOW_DATA");
+                    mHalCommandToUse = HAL_COMMAND_ALLOW_DATA;
+                    sendRilCommands(phoneId);
                     return;
                 }
             }
